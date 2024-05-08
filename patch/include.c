@@ -1,7 +1,6 @@
 /* Bar functionality */
 #include "bar_indicators.c"
 #include "bar_tagicons.c"
-#include "bar.c"
 
 #if BAR_ALPHA_PATCH
 #include "bar_alpha.c"
@@ -20,6 +19,9 @@
 #endif
 #if COMBO_PATCH
 #include "combo.c"
+#endif
+#if BAR_HOLDBAR_PATCH
+#include "bar_holdbar.c"
 #endif
 #if BAR_LTSYMBOL_PATCH
 #include "bar_ltsymbol.c"
@@ -51,14 +53,8 @@
 #if BAR_TABGROUPS_PATCH
 #include "bar_tabgroups.c"
 #endif
-#if BAR_TAGPREVIEW_PATCH
-#include "bar_tagpreview.c"
-#endif
 #if BAR_TAGS_PATCH
 #include "bar_tags.c"
-#endif
-#if BAR_TAGLABELS_PATCH
-#include "bar_taglabels.c"
 #endif
 #if BAR_TAGGRID_PATCH
 #include "bar_taggrid.c"
@@ -84,9 +80,6 @@
 #if BAR_SYSTRAY_PATCH
 #include "bar_systray.c"
 #endif
-#if BAR_HOLDBAR_PATCH
-#include "bar_holdbar.c"
-#endif
 #if BAR_VTCOLORS_PATCH
 #include "bar_vtcolors.c"
 #endif
@@ -98,13 +91,10 @@
 #endif
 
 /* Other patches */
-#if ALT_TAB_PATCH
-#include "alttab.c"
-#endif
 #if ASPECTRESIZE_PATCH
 #include "aspectresize.c"
 #endif
-#if ATTACHABOVE_PATCH || ATTACHASIDE_PATCH || ATTACHBELOW_PATCH || ATTACHBOTTOM_PATCH || SEAMLESS_RESTART_PATCH
+#if ATTACHABOVE_PATCH || ATTACHASIDE_PATCH || ATTACHBELOW_PATCH || ATTACHBOTTOM_PATCH
 #include "attachx.c"
 #endif
 #if AUTOSTART_PATCH
@@ -151,10 +141,7 @@
 #if FOCUSDIR_PATCH
 #include "focusdir.c"
 #endif
-#if FOCUSFOLLOWMOUSE_PATCH
-#include "focusfollowmouse.c"
-#endif
-#if FOCUSMASTER_PATCH || FOCUSMASTER_RETURN_PATCH
+#if FOCUSMASTER_PATCH
 #include "focusmaster.c"
 #endif
 #if FOCUSURGENT_PATCH
@@ -199,17 +186,11 @@
 #if MOVESTACK_PATCH
 #include "movestack.c"
 #endif
-#if NAMETAG_PATCH
-#include "nametag.c"
-#endif
 #if NO_MOD_BUTTONS_PATCH
 #include "nomodbuttons.c"
 #endif
 #if PERTAG_PATCH
 #include "pertag.c"
-#endif
-#if PLACEDIR_PATCH
-#include "placedir.c"
 #endif
 #if PLACEMOUSE_PATCH
 #include "placemouse.c"
@@ -234,9 +215,7 @@
 #if ROUNDED_CORNERS_PATCH
 #include "roundedcorners.c"
 #endif
-#if RENAMED_SCRATCHPADS_PATCH
-#include "renamed_scratchpads.c"
-#elif SCRATCHPADS_PATCH
+#if SCRATCHPADS_PATCH
 #include "scratchpad.c"
 #endif
 #if SCRATCHPAD_ALT_1_PATCH
@@ -247,21 +226,6 @@
 #endif
 #if SETBORDERPX_PATCH
 #include "setborderpx.c"
-#endif
-#if SHIFTBOTH_PATCH || SHIFTSWAPTAGS_PATCH || SHIFTTAG_PATCH || SHIFTTAGCLIENTS_PATCH || SHIFTVIEW_PATCH || SHIFTVIEW_CLIENTS_PATCH
-#include "shift.c"
-#endif
-#if SHIFTBOTH_PATCH
-#include "shiftboth.c"
-#endif
-#if SHIFTSWAPTAGS_PATCH && SWAPTAGS_PATCH
-#include "shiftswaptags.c"
-#endif
-#if SHIFTTAG_PATCH
-#include "shifttag.c"
-#endif
-#if SHIFTTAGCLIENTS_PATCH
-#include "shifttagclients.c"
 #endif
 #if SHIFTVIEW_PATCH
 #include "shiftview.c"
@@ -316,9 +280,6 @@
 #if TOGGLEFULLSCREEN_PATCH
 #include "togglefullscreen.c"
 #endif
-#if TOGGLETOPBAR_PATCH
-#include "toggletopbar.c"
-#endif
 #if TRANSFER_PATCH
 #include "transfer.c"
 #endif
@@ -348,9 +309,6 @@
 #endif
 #if DRAGMFACT_PATCH
 #include "dragmfact.c"
-#endif
-#if SEAMLESS_RESTART_PATCH
-#include "seamless_restart.c"
 #endif
 /* Layouts */
 #if BSTACK_LAYOUT || BSTACKHORIZ_LAYOUT || CENTEREDMASTER_LAYOUT || CENTEREDFLOATINGMASTER_LAYOUT || COLUMNS_LAYOUT || DECK_LAYOUT || TILE_LAYOUT

@@ -166,29 +166,12 @@ getselschemefor(int scheme)
 }
 
 void
-flextitledraw(Monitor *m, Client *c, int unused, int x, int w, int tabscheme, Arg *arg, BarArg *a)
+flextitledraw(Monitor *m, Client *c, int unused, int x, int w, int tabscheme, Arg *arg, BarArg *barg)
 {
 	if (!c)
 		return;
-	int i, nclienttags = 0, nviewtags = 0;
-	int tpad = lrpad / 2;
-	#if BAR_WINICON_PATCH
-	int ipad = c->icon ? c->icw + ICONSPACING : 0;
-	#endif // BAR_WINICON_PATCH
-	#if BAR_CENTEREDWINDOWNAME_PATCH
-	int cpad = 0;
-	#endif // BAR_CENTEREDWINDOWNAME_PATCH
-	int tx = x;
-	int tw = w;
-
+	int i, nclienttags = 0, nviewtags = 0, pad = lrpad / 2;
 	int clientscheme = (
-		#if RENAMED_SCRATCHPADS_PATCH
-		c->scratchkey != 0 && c == selmon->sel
-		? SchemeScratchSel
-		: c->scratchkey != 0
-		? SchemeScratchNorm
-		:
-		#endif // RENAMED_SCRATCHPADS_PATCH
 		c == selmon->sel && HIDDEN(c)
 		? SchemeHidSel
 		: HIDDEN(c)
@@ -199,49 +182,30 @@ flextitledraw(Monitor *m, Client *c, int unused, int x, int w, int tabscheme, Ar
 		? SchemeUrg
 		: tabscheme
 	);
-
 	drw_setscheme(drw, scheme[clientscheme]);
 	XSetWindowBorder(dpy, c->win, scheme[clientscheme][ColBorder].pixel);
-
-	if (w <= TEXTW("A") - lrpad + tpad) // reduce text padding if wintitle is too small
-		tpad = (w - TEXTW("A") + lrpad < 0 ? 0 : (w - TEXTW("A") + lrpad) / 2);
-	#if BAR_WINICON_PATCH && BAR_CENTEREDWINDOWNAME_PATCH
-	else if (TEXTW(c->name) + ipad < w)
-		cpad = (w - TEXTW(c->name) - ipad) / 2;
-	#elif BAR_CENTEREDWINDOWNAME_PATCH
-	else if (TEXTW(c->name) < w)
-		cpad = (w - TEXTW(c->name)) / 2;
-	#endif // BAR_CENTEREDWINDOWNAME_PATCH
-
-	XSetForeground(drw->dpy, drw->gc, drw->scheme[ColBg].pixel);
-	XFillRectangle(drw->dpy, drw->drawable, drw->gc, x, a->y, w, a->h);
-
+	if (w <= TEXTW("A") - lrpad + pad) // reduce text padding if wintitle is too small
+		pad = (w - TEXTW("A") + lrpad < 0 ? 0 : (w - TEXTW("A") + lrpad) / 2);
 	#if BAR_CENTEREDWINDOWNAME_PATCH
-	/* Apply center padding, if any */
-	tx += cpad;
-	tw -= cpad;
+	else if (TEXTW(c->name) < w)
+		pad = (w - TEXTW(c->name) + lrpad) / 2;
 	#endif // BAR_CENTEREDWINDOWNAME_PATCH
-
-	tx += tpad;
-	tw -= lrpad;
 
 	#if BAR_WINICON_PATCH
-	if (ipad) {
-		drw_pic(drw, tx, a->y + (a->h - c->ich) / 2, c->icw, c->ich, c->icon);
-		tx += ipad;
-		tw -= ipad;
-	}
+	drw_text(drw, x, barg->y, w, barg->h, pad + (c->icon ? c->icon->width + ICONSPACING : 0), c->name, 0, False);
+	if (c->icon)
+		drw_img(drw, x + pad, barg->y + (barg->h - c->icon->height) / 2, c->icon, tmpicon);
+	#else
+	drw_text(drw, x, barg->y, w, barg->h, pad, c->name, 0, False);
 	#endif // BAR_WINICON_PATCH
 
-	drw_text(drw, tx, a->y, tw, a->h, 0, c->name, 0, False);
-	drawstateindicator(m, c, 1, x + 2, a->y, w, a->h, 0, 0, 0);
+	drawstateindicator(m, c, 1, x + 2, barg->y, w, barg->h, 0, 0, 0);
 
 	if (FLEXWINTITLE_BORDERS) {
 		XSetForeground(drw->dpy, drw->gc, scheme[SchemeSel][ColBorder].pixel);
-		XFillRectangle(drw->dpy, drw->drawable, drw->gc, x, a->y, 1, a->h);
-		XFillRectangle(drw->dpy, drw->drawable, drw->gc, x + w - (x + w >= a->w ? 1 : 0), a->y, 1, a->h);
+		XFillRectangle(drw->dpy, drw->drawable, drw->gc, x, barg->y, 1, barg->h);
+		XFillRectangle(drw->dpy, drw->drawable, drw->gc, x + w - (x + w >= barg->w ? 1 : 0), barg->y, 1, barg->h);
 	}
-
 	/* Optional tags icons */
 	for (i = 0; i < NUMTAGS; i++) {
 		if ((m->tagset[m->seltags] >> i) & 1)
@@ -251,7 +215,7 @@ flextitledraw(Monitor *m, Client *c, int unused, int x, int w, int tabscheme, Ar
 	}
 
 	if (TAGSINDICATOR == 2 || nclienttags > 1 || nviewtags > 1)
-		drawindicator(m, c, 1, x, a->y, w, a->h, 0, 0, 0, INDICATOR_RIGHT_TAGS);
+		drawindicator(m, c, 1, x, barg->y, w, barg->h, 0, 0, 0, INDICATOR_RIGHT_TAGS);
 }
 
 #ifndef HIDDEN

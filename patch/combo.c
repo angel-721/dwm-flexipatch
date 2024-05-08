@@ -22,18 +22,29 @@ combotag(const Arg *arg)
 			combo = 1;
 			selmon->sel->tags = arg->ui & TAGMASK;
 		}
-		arrange(selmon);
 		focus(NULL);
+		arrange(selmon);
 	}
 }
 
 void
 comboview(const Arg *arg)
 {
+	unsigned newtags = arg->ui & TAGMASK;
 	if (combo) {
-		view(&((Arg) { .ui = selmon->tagset[selmon->seltags] | (arg->ui & TAGMASK) }));
+		selmon->tagset[selmon->seltags] |= newtags;
 	} else {
+		selmon->seltags ^= 1;	/*toggle tagset*/
 		combo = 1;
-		view(arg);
+		if (newtags) {
+			#if PERTAG_PATCH
+			pertagview(&((Arg) { .ui = newtags }));
+			#else
+			selmon->tagset[selmon->seltags] = newtags;
+			#endif // PERTAG_PATCH
+		}
 	}
+	focus(NULL);
+	arrange(selmon);
 }
+

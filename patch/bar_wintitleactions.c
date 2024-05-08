@@ -51,7 +51,7 @@ togglewin(const Arg *arg)
 	Client *c = (Client*)arg->v;
 	if (!c)
 		return;
-	if (!HIDDEN(c) && c == selmon->sel)
+	if (c == selmon->sel)
 		hide(c);
 	else {
 		if (HIDDEN(c))

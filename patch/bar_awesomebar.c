@@ -7,14 +7,8 @@ width_awesomebar(Bar *bar, BarArg *a)
 int
 draw_awesomebar(Bar *bar, BarArg *a)
 {
-	int n = 0, scm, remainder = 0, tabw, tpad, tx, tw;
+	int n = 0, scm, remainder = 0, tabw, pad;
 	unsigned int i;
-	#if BAR_CENTEREDWINDOWNAME_PATCH
-	int cpad;
-	#endif // BAR_CENTEREDWINDOWNAME_PATCH
-	#if BAR_WINICON_PATCH
-	int ipad;
-	#endif // BAR_WINICON_PATCH
 	#if BAR_TITLE_LEFT_PAD_PATCH && BAR_TITLE_RIGHT_PAD_PATCH
 	int x = a->x + lrpad / 2, w = a->w - lrpad;
 	#elif BAR_TITLE_LEFT_PAD_PATCH
@@ -45,48 +39,21 @@ draw_awesomebar(Bar *bar, BarArg *a)
 			else
 				scm = SchemeTitleNorm;
 
-			tpad = lrpad / 2;
+			pad = lrpad / 2;
 			#if BAR_CENTEREDWINDOWNAME_PATCH
-			cpad = 0;
-			#endif // BAR_CENTEREDWINDOWNAME_PATCH
-			#if BAR_WINICON_PATCH
-			ipad = c->icon ? c->icw + ICONSPACING : 0;
-			#endif // BAR_WINICON_PATCH
-
-			tx = x;
-			tw = tabw;
-
-			#if BAR_WINICON_PATCH && BAR_CENTEREDWINDOWNAME_PATCH
-			if (TEXTW(c->name) + ipad < tabw)
-				cpad = (tabw - TEXTW(c->name) - ipad) / 2;
-			#elif BAR_CENTEREDWINDOWNAME_PATCH
 			if (TEXTW(c->name) < tabw)
-				cpad = (tabw - TEXTW(c->name)) / 2;
+				pad = (tabw - TEXTW(c->name) + lrpad) / 2;
 			#endif // BAR_CENTEREDWINDOWNAME_PATCH
 
 			drw_setscheme(drw, scheme[scm]);
 
-			XSetForeground(drw->dpy, drw->gc, drw->scheme[ColBg].pixel);
-			XFillRectangle(drw->dpy, drw->drawable, drw->gc, tx, a->y, tw, a->h);
-
-			#if BAR_CENTEREDWINDOWNAME_PATCH
-			/* Apply center padding, if any */
-			tx += cpad;
-			tw -= cpad;
-			#endif // BAR_CENTEREDWINDOWNAME_PATCH
-
-			tx += tpad;
-			tw -= lrpad;
-
 			#if BAR_WINICON_PATCH
-			if (ipad) {
-				drw_pic(drw, tx, a->y + (a->h - c->ich) / 2, c->icw, c->ich, c->icon);
-				tx += ipad;
-				tw -= ipad;
-			}
+			drw_text(drw, x, a->y, tabw + (i < remainder ? 1 : 0), a->h, pad + (c->icon ? c->icon->width + ICONSPACING : 0), c->name, 0, False);
+			if (c->icon)
+				drw_img(drw, x + pad, a->y + (a->h - c->icon->height) / 2, c->icon, tmpicon);
+			#else
+			drw_text(drw, x, a->y, tabw + (i < remainder ? 1 : 0), a->h, pad, c->name, 0, False);
 			#endif // BAR_WINICON_PATCH
-
-			drw_text(drw, tx, a->y, tw, a->h, 0, c->name, 0, False);
 
 			drawstateindicator(c->mon, c, 1, x, a->y, tabw + (i < remainder ? 1 : 0), a->h, 0, 0, c->isfixed);
 			x += tabw + (i < remainder ? 1 : 0);

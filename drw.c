@@ -9,30 +9,6 @@
 #include "drw.h"
 #include "util.h"
 
-#if BIDI_PATCH
-#include <fribidi.h>
-
-static char fribidi_text[BUFSIZ] = "";
-
-static void
-apply_fribidi(const char *str)
-{
-	FriBidiStrIndex len = strlen(str);
-	FriBidiChar logical[BUFSIZ];
-	FriBidiChar visual[BUFSIZ];
-	FriBidiParType base = FRIBIDI_PAR_ON;
-	FriBidiCharSet charset;
-
-	fribidi_text[0] = 0;
-	if (len > 0) {
-		charset = fribidi_parse_charset("UTF-8");
-		len = fribidi_charset_to_unicode(charset, str, len, logical);
-		fribidi_log2vis(logical, len, &base, visual, NULL, NULL, NULL);
-		len = fribidi_unicode_to_charset(charset, visual, len, fribidi_text);
-	}
-}
-#endif
-
 #if !BAR_PANGO_PATCH
 #define UTF_INVALID 0xFFFD
 #define UTF_SIZ     4
@@ -113,15 +89,9 @@ drw_create(Display *dpy, int screen, Window root, unsigned int w, unsigned int h
 	drw->depth = depth;
 	drw->cmap = cmap;
 	drw->drawable = XCreatePixmap(dpy, root, w, h, depth);
-	#if BAR_WINICON_PATCH
-	drw->picture = XRenderCreatePicture(dpy, drw->drawable, XRenderFindVisualFormat(dpy, visual), 0, NULL);
-	#endif // BAR_WINICON_PATCH
 	drw->gc = XCreateGC(dpy, drw->drawable, 0, NULL);
 	#else
 	drw->drawable = XCreatePixmap(dpy, root, w, h, DefaultDepth(dpy, screen));
-	#if BAR_WINICON_PATCH
-	drw->picture = XRenderCreatePicture(dpy, drw->drawable, XRenderFindVisualFormat(dpy, DefaultVisual(dpy, screen)), 0, NULL);
-	#endif // BAR_WINICON_PATCH
 	drw->gc = XCreateGC(dpy, root, 0, NULL);
 	#endif // BAR_ALPHA_PATCH
 	XSetLineAttributes(dpy, drw->gc, 1, LineSolid, CapButt, JoinMiter);
@@ -137,31 +107,18 @@ drw_resize(Drw *drw, unsigned int w, unsigned int h)
 
 	drw->w = w;
 	drw->h = h;
-	#if BAR_WINICON_PATCH
-	if (drw->picture)
-		XRenderFreePicture(drw->dpy, drw->picture);
-	#endif // BAR_WINICON_PATCH
 	if (drw->drawable)
 		XFreePixmap(drw->dpy, drw->drawable);
 	#if BAR_ALPHA_PATCH
 	drw->drawable = XCreatePixmap(drw->dpy, drw->root, w, h, drw->depth);
-	#if BAR_WINICON_PATCH
-	drw->picture = XRenderCreatePicture(drw->dpy, drw->drawable, XRenderFindVisualFormat(drw->dpy, drw->visual), 0, NULL);
-	#endif // BAR_WINICON_PATCH
-	#else // !BAR_ALPHA_PATCH
+	#else
 	drw->drawable = XCreatePixmap(drw->dpy, drw->root, w, h, DefaultDepth(drw->dpy, drw->screen));
-	#if BAR_WINICON_PATCH
-	drw->picture = XRenderCreatePicture(drw->dpy, drw->drawable, XRenderFindVisualFormat(drw->dpy, DefaultVisual(drw->dpy, drw->screen)), 0, NULL);
-	#endif // BAR_WINICON_PATCH
 	#endif // BAR_ALPHA_PATCH
 }
 
 void
 drw_free(Drw *drw)
 {
-	#if BAR_WINICON_PATCH
-	XRenderFreePicture(drw->dpy, drw->picture);
-	#endif // BAR_WINICON_PATCH
 	XFreePixmap(drw->dpy, drw->drawable);
 	XFreeGC(drw->dpy, drw->gc);
 	drw_fontset_free(drw->fonts);
@@ -237,7 +194,7 @@ xfont_create(Drw *drw, const char *fontname, FcPattern *fontpattern)
 		die("no font specified.");
 	}
 
-	#if BAR_NO_COLOR_EMOJI_PATCH
+	#if !BAR_COLOR_EMOJI_PATCH
 	/* Do not allow using color fonts. This is a workaround for a BadLength
 	 * error from Xft with color glyphs. Modelled on the Xterm workaround. See
 	 * https://bugzilla.redhat.com/show_bug.cgi?id=1498269
@@ -250,7 +207,7 @@ xfont_create(Drw *drw, const char *fontname, FcPattern *fontpattern)
 		XftFontClose(drw->dpy, xfont);
 		return NULL;
 	}
-	#endif // BAR_NO_COLOR_EMOJI_PATCH
+	#endif // BAR_COLOR_EMOJI_PATCH
 
 	font = ecalloc(1, sizeof(Fnt));
 	font->xfont = xfont;
@@ -337,22 +294,14 @@ drw_clr_create(
 	#if BAR_ALPHA_PATCH
 	if (!XftColorAllocName(drw->dpy, drw->visual, drw->cmap,
 	                       clrname, dest))
-		#if DO_NOT_DIE_ON_COLOR_ALLOCATION_FAILURE_PATCH
-		fprintf(stderr, "warning, cannot allocate color '%s'", clrname);
-		#else
 		die("error, cannot allocate color '%s'", clrname);
-		#endif // DO_NOT_DIE_ON_COLOR_ALLOCATION_FAILURE_PATCH
 
 	dest->pixel = (dest->pixel & 0x00ffffffU) | (alpha << 24);
 	#else
 	if (!XftColorAllocName(drw->dpy, DefaultVisual(drw->dpy, drw->screen),
 	                       DefaultColormap(drw->dpy, drw->screen),
 	                       clrname, dest))
-		#if DO_NOT_DIE_ON_COLOR_ALLOCATION_FAILURE_PATCH
-		fprintf(stderr, "warning, cannot allocate color '%s'", clrname);
-		#else
 		die("error, cannot allocate color '%s'", clrname);
-		#endif // DO_NOT_DIE_ON_COLOR_ALLOCATION_FAILURE_PATCH
 
 	#if NO_TRANSPARENT_BORDERS_PATCH
 	dest->pixel |= 0xff << 24;
@@ -426,15 +375,10 @@ drw_rect(Drw *drw, int x, int y, unsigned int w, unsigned int h, int filled, int
 		XDrawRectangle(drw->dpy, drw->drawable, drw->gc, x, y, w - 1, h - 1);
 }
 
-#if BIDI_PATCH
-int
-_drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lpad, const char *text, int invert, Bool markup)
-#else
+#if BAR_PANGO_PATCH
 int
 drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lpad, const char *text, int invert, Bool markup)
-#endif // BIDI_PATCH
 {
-#if BAR_PANGO_PATCH
 	char buf[1024];
 	int ty;
 	unsigned int ew;
@@ -495,7 +439,11 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 		XftDrawDestroy(d);
 
 	return x + (render ? w : 0);
+}
 #else
+int
+drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lpad, const char *text, int invert, Bool ignored)
+{
 	char buf[1024];
 	int ty;
 	unsigned int ew;
@@ -559,8 +507,8 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 		if (utf8strlen) {
 			drw_font_getexts(usedfont, utf8str, utf8strlen, &ew, NULL);
 			/* shorten text if necessary */
-			for (len = MIN(utf8strlen, sizeof(buf) - 1); len && ew > w; drw_font_getexts(usedfont, utf8str, len, &ew, NULL))
-				len--;
+			for (len = MIN(utf8strlen, sizeof(buf) - 1); len && ew > w; len--)
+				drw_font_getexts(usedfont, utf8str, len, &ew, NULL);
 
 			if (len) {
 				memcpy(buf, utf8str, len);
@@ -600,9 +548,7 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 			fcpattern = FcPatternDuplicate(drw->fonts->pattern);
 			FcPatternAddCharSet(fcpattern, FC_CHARSET, fccharset);
 			FcPatternAddBool(fcpattern, FC_SCALABLE, FcTrue);
-			#if BAR_NO_COLOR_EMOJI_PATCH
 			FcPatternAddBool(fcpattern, FC_COLOR, FcFalse);
-			#endif // BAR_NO_COLOR_EMOJI_PATCH
 
 			FcConfigSubstitute(NULL, fcpattern, FcMatchPattern);
 			FcDefaultSubstitute(fcpattern);
@@ -628,17 +574,8 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 		XftDrawDestroy(d);
 
 	return x + (render ? w : 0);
+}
 #endif // BAR_PANGO_PATCH
-}
-
-#if BIDI_PATCH
-int
-drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lpad, const char *text, int invert, Bool markup)
-{
-	apply_fribidi(text);
-	return _drw_text(drw, x, y, w, h, lpad, fribidi_text, invert, markup);
-}
-#endif // BIDI_PATCH
 
 #if BAR_POWERLINE_TAGS_PATCH || BAR_POWERLINE_STATUS_PATCH
 void

@@ -4,7 +4,7 @@ tagicon(Monitor *m, int tag)
 	#if BAR_ALTTAGSDECORATION_PATCH
 	Client *c;
 	#endif // BAR_ALTTAGSDECORATION_PATCH
-	int tagindex = tag + NUMTAGS * m->num;
+	int tagindex = tag + NUMTAGS * m->index;
 	if (tagindex >= LENGTH(tagicons[DEFAULT_TAGS]))
 		tagindex = tagindex % LENGTH(tagicons[DEFAULT_TAGS]);
 	#if BAR_ALTTAGSDECORATION_PATCH
