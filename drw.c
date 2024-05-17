@@ -380,10 +380,10 @@ int
 drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lpad, const char *text, int invert, Bool markup)
 {
 	char buf[1024];
-	int i, ty, th;
-	unsigned int ew, eh;
+	int ty;
+	unsigned int ew;
 	XftDraw *d = NULL;
-	size_t len;
+	size_t i, len;
 	int render = x || y || w || h;
 
 	if (!drw || (render && !drw->scheme) || !text || !drw->fonts)
@@ -408,14 +408,10 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 	len = strlen(text);
 
 	if (len) {
-		drw_font_getexts(drw->fonts, text, len, &ew, &eh, markup);
-		th = eh;
+		drw_font_getexts(drw->fonts, text, len, &ew, NULL, markup);
 		/* shorten text if necessary */
-		for (len = MIN(len, sizeof(buf) - 1); len && ew > w; len--) {
-			drw_font_getexts(drw->fonts, text, len, &ew, &eh, markup);
-			if (eh > th)
-				th = eh;
-		}
+		for (len = MIN(len, sizeof(buf) - 1); len && ew > w; len--)
+			drw_font_getexts(drw->fonts, text, len, &ew, NULL, markup);
 
 		if (len) {
 			memcpy(buf, text, len);
@@ -425,7 +421,7 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 					; /* NOP */
 
 			if (render) {
-				ty = y + (h - th) / 2;
+				ty = y + (h - drw->fonts->h) / 2;
 				if (markup)
 					pango_layout_set_markup(drw->fonts->layout, buf, len);
 				else
